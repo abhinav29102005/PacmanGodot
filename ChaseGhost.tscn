@@ -1,13 +1,13 @@
 [gd_scene load_steps=6 format=2]
 
-[ext_resource path="res://icon.png" type="Texture" id=2]
+[ext_resource path="res://icon.png" type="Texture2D" id=2]
 
 [sub_resource type="GDScript" id=4]
-script/source = "extends KinematicBody2D
+script/source = "extends CharacterBody2D
 
 
-onready var enemy = get_parent()
-onready var player = get_node(\"Player\") # reference to the player, up to you
+@onready var enemy = get_parent()
+@onready var player = get_node(\"Player\") # reference to the player, up to you
 
 func _physics_process(delta):
 
@@ -16,7 +16,9 @@ func _physics_process(delta):
 	var direction = to_player.normalize()
 
 	#if distance > attack_range:
-	enemy.move_and_slide(direction * enemy.speed)
+	enemy.set_velocity(direction * enemy.speed)
+	enemy.move_and_slide()
+	enemy.velocity
 	#else:
 		#enemy.attack()
 "
@@ -35,13 +37,13 @@ radius = 30.0315
 [sub_resource type="RectangleShape2D" id=3]
 extents = Vector2( 32.8123, 33.0131 )
 
-[node name="ChasingGhost" type="KinematicBody2D" groups=[
+[node name="ChasingGhost" type="CharacterBody2D" groups=[
 "Ghost",
 ]]
 scale = Vector2( 0.5, 0.5 )
 script = SubResource( 4 )
 
-[node name="AnimatedSprite" type="AnimatedSprite" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 frames = SubResource( 1 )
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

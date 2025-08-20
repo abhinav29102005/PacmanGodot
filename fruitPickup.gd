@@ -39,8 +39,8 @@ func _on_Area2D_body_entered(body):
 				tempScore = MyGlobals.score + 3000
 		MyGlobals.score = tempScore
 		self.visible = false
-		$Area2D.set_collision_layer_bit(0,0)
-		$Area2D.set_collision_mask_bit(0,0)
+		$Area2D.set_collision_layer_value(0,0)
+		$Area2D.set_collision_mask_value(0,0)
 		
 		get_parent().get_node("fruitSound").play()
 		

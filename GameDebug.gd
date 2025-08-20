@@ -46,8 +46,8 @@ func newStage():
 	var pickUps = get_tree().get_nodes_in_group("pickUp")
 	for i in pickUps:
 		i.visible = true
-		i.get_node("Area2D").set_collision_layer_bit(0,1)
-		i.get_node("Area2D").set_collision_mask_bit(0,1)
+		i.get_node("Area2D").set_collision_layer_value(0,1)
+		i.get_node("Area2D").set_collision_mask_value(0,1)
 	#get_node("GhostSpawn").position
 
 #called when touched by ghost, reset positions if have life
@@ -143,5 +143,5 @@ func _on_Area2D_body_entered(body):
 
 
 func _on_ReplayButton_pressed():
-	get_tree().change_scene("res://Game.tscn")
+	get_tree().change_scene_to_file("res://Game.tscn")
 	pass # Replace with function body.

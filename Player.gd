@@ -1,25 +1,23 @@
-extends KinematicBody2D
+extends CharacterBody2D
 
-export (int) var speed = 175
-
+@export var speed: int = 175
 var isMoving = 0
 var lastDir = "left"
-
-var velocity = Vector2()
+# Remove the custom velocity variable - use the built-in one from CharacterBody2D
 
 func get_input():
-	velocity = Vector2()
+	velocity = Vector2()  # Use the built-in velocity property
 	if (!MyGlobals.gameOver):
 		if (Input.is_action_pressed('ui_right') || (isMoving && lastDir == "right")):
 			isMoving = 1
 			lastDir = "right"
 			velocity.x += 1
-			$AnimatedSprite.flip_h = false
+			$AnimatedSprite2D.flip_h = false
 		if (Input.is_action_pressed('ui_left') || (isMoving && lastDir == "left")):
 			isMoving = 1
 			lastDir = "left"
 			velocity.x -= 1
-			$AnimatedSprite.flip_h = true
+			$AnimatedSprite2D.flip_h = true
 		if (Input.is_action_pressed('ui_down') || (isMoving && lastDir == "down")):
 			isMoving = 1
 			lastDir = "down"
@@ -30,8 +28,10 @@ func get_input():
 			velocity.y -= 1
 		velocity = velocity.normalized() * speed
 	else:
-		velocity = Vector2(0,0)
+		velocity = Vector2(0, 0)
 
 func _physics_process(delta):
 	get_input()
-	velocity = move_and_slide(velocity)
+	# No need for set_velocity() - just use move_and_slide()
+	move_and_slide()
+	# Remove the redundant velocity assignment at the end

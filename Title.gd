@@ -1,9 +1,6 @@
 extends Node2D
 
-
-# Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
+# Declare member variables here.
 var storedScore
 
 const FILE_NAME = "user://game-data.json"
@@ -12,51 +9,53 @@ var player = {
 	"hscore": 0,
 }
 
-
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	loadf()
+	load_game_data()
 	MyGlobals.savedHighScore = player.hscore
 	
-	get_node("HighScore/HighScoreNumber").text = str(MyGlobals.savedHighScore)
+	$HighScore/HighScoreNumber.text = str(MyGlobals.savedHighScore)
 	
 	#displays first score
-	get_node("Score/ScoreNumber").text = str(MyGlobals.score)
+	$Score/ScoreNumber.text = str(MyGlobals.score)
 	
-	pass # Replace with function body.
+	pass 
 
-func save():
-	var file = File.new()
-	file.open(FILE_NAME, File.WRITE)
-	file.store_string(to_json(player))
-	file.close()
-
-func loadf():
-	var file = File.new()
-	if file.file_exists(FILE_NAME):
-		file.open(FILE_NAME, File.READ)
-		var data = parse_json(file.get_as_text())
+func save_game_data():
+	var file = FileAccess.open(FILE_NAME, FileAccess.WRITE)
+	if file:
+		var json_string = JSON.stringify(player)
+		file.store_string(json_string)
 		file.close()
-		if typeof(data) == TYPE_DICTIONARY:
-			player = data
+	else:
+		printerr("Failed to save data to file.")
+
+func load_game_data():
+	if FileAccess.file_exists(FILE_NAME):
+		var file = FileAccess.open(FILE_NAME, FileAccess.READ)
+		if file:
+			var content = file.get_as_text()
+			var data = JSON.parse_string(content)
+			file.close()
+			
+			if data is Dictionary:
+				player = data
+			else:
+				printerr("Corrupted data!")
 		else:
-			printerr("Corrupted data!")
+			printerr("Failed to load data from file.")
 	else:
 		printerr("No saved data!")
 
 func _input(event):
-	if event is InputEventKey and event.pressed:
+	if event is InputEventKey and event.is_pressed():
 		print("loading")
-		get_tree().change_scene("res://Game.tscn")
-		#if event.scancode != KEY_ENTER:
-			#pass
-
+		get_tree().change_scene_to_file("res://Game.tscn")
 
 func _on_Button_pressed():
-	get_tree().change_scene("res://Game.tscn")
-	pass # Replace with function body.
-
+	get_tree().change_scene_to_file("res://Game.tscn")
+	pass 
 
 func _on_Button2_pressed():
 	OS.shell_open("https://doamaster.itch.io/")
-	pass # Replace with function body.
+	pass

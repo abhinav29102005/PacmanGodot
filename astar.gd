@@ -1,26 +1,39 @@
 extends TileMap
 
 const BASE_LINE_WIDTH = 3.0
-const DRAW_COLOR = Color.white
+const DRAW_COLOR = Color.WHITE
 
 # The Tilemap node doesn't have clear bounds so we're defining the map's limits here.
-export(Vector2) var map_size = Vector2.ONE * 16
+@export var map_size: Vector2 = Vector2.ONE * 16
 
 # The path start and end variables use setter methods.
 # You can find them at the bottom of the script.
-var path_start_position = Vector2() setget _set_path_start_position
-var path_end_position = Vector2() setget _set_path_end_position
+var path_start_position = Vector2(): set = _set_path_start_position
+var path_end_position = Vector2(): set = _set_path_end_position
 
 var _point_path = []
 
 # You can only create an AStar node from code, not from the Scene tab.
-onready var astar_node = AStar.new()
-# get_used_cells_by_id is a method from the TileMap node.
-# Here the id 0 corresponds to the grey tile, the obstacles.
-onready var obstacles = get_used_cells_by_id(0)
-onready var _half_cell_size = cell_size / 2
+@onready var astar_node = AStar3D.new()
+
+# In Godot 4, get_used_cells_by_id is replaced with get_used_cells
+# and we need to specify the layer (0 is default) and source_id
+@onready var obstacles = get_used_cells(0)
+
+# In Godot 4, cell_size is replaced with tile_set.tile_size
+@onready var _half_cell_size: Vector2
 
 func _ready():
+	# Get tile size from the tileset
+	if tile_set and tile_set.get_source_count() > 0:
+		var source = tile_set.get_source(0)
+		if source is TileSetAtlasSource:
+			_half_cell_size = source.texture_region_size / 2
+		else:
+			_half_cell_size = Vector2(16, 16)  # Default fallback
+	else:
+		_half_cell_size = Vector2(16, 16)  # Default fallback
+	
 	var walkable_cells_list = astar_add_walkable_cells(obstacles)
 	astar_connect_walkable_cells(walkable_cells_list)
 
@@ -31,13 +44,13 @@ func _draw():
 	var point_start = _point_path[0]
 	var point_end = _point_path[len(_point_path) - 1]
 
-	set_cell(point_start.x, point_start.y, 1)
-	set_cell(point_end.x, point_end.y, 2)
+	set_cell(0, point_start, 0, Vector2i(1, 0))  # Updated for Godot 4
+	set_cell(0, point_end, 0, Vector2i(2, 0))    # Updated for Godot 4
 
-	var last_point = map_to_world(Vector2(point_start.x, point_start.y)) + _half_cell_size
+	var last_point = map_to_local(point_start) + _half_cell_size
 	for index in range(1, len(_point_path)):
-		var current_point = map_to_world(Vector2(_point_path[index].x, _point_path[index].y)) + _half_cell_size
-		draw_line(last_point, current_point, DRAW_COLOR, BASE_LINE_WIDTH, true)
+		var current_point = map_to_local(_point_path[index]) + _half_cell_size
+		draw_line(last_point, current_point, DRAW_COLOR, BASE_LINE_WIDTH)
 		draw_circle(current_point, BASE_LINE_WIDTH * 2.0, DRAW_COLOR)
 		last_point = current_point
 
@@ -47,9 +60,9 @@ func _draw():
 #func _input(event):
 #	if event.is_action_pressed('click') and Input.is_key_pressed(KEY_SHIFT):
 #		# To call the setter method from this script we have to use the explicit self.
-#		self.path_start_position = world_to_map(get_global_mouse_position())
+#		self.path_start_position = local_to_map(get_global_mouse_position())
 #	elif event.is_action_pressed('click'):
-#		self.path_end_position = world_to_map(get_global_mouse_position())
+#		self.path_end_position = local_to_map(get_global_mouse_position())
 
 
 # Loops through all cells within the map's bounds and
@@ -58,7 +71,7 @@ func astar_add_walkable_cells(obstacle_list = []):
 	var points_array = []
 	for y in range(map_size.y):
 		for x in range(map_size.x):
-			var point = Vector2(x, y)
+			var point = Vector2i(x, y)  # Use Vector2i in Godot 4
 			if point in obstacle_list:
 				continue
 
@@ -84,11 +97,11 @@ func astar_connect_walkable_cells(points_array):
 		# For every cell in the map, we check the one to the top, right.
 		# left and bottom of it. If it's in the map and not an obstalce.
 		# We connect the current point with it.
-		var points_relative = PoolVector2Array([
-			point + Vector2.RIGHT,
-			point + Vector2.LEFT,
-			point + Vector2.DOWN,
-			point + Vector2.UP,
+		var points_relative = PackedVector2Array([
+			point + Vector2i.RIGHT,   # Vector2.RIGHT -> Vector2i.RIGHT
+			point + Vector2i.LEFT,    # Vector2.LEFT -> Vector2i.LEFT  
+			point + Vector2i.DOWN,    # Vector2.DOWN -> Vector2i.DOWN
+			point + Vector2i.UP,      # Vector2.UP -> Vector2i.UP
 		])
 		for point_relative in points_relative:
 			var point_relative_index = calculate_point_index(point_relative)
@@ -110,7 +123,7 @@ func astar_connect_walkable_cells_diagonal(points_array):
 		var point_index = calculate_point_index(point)
 		for local_y in range(3):
 			for local_x in range(3):
-				var point_relative = Vector2(point.x + local_x - 1, point.y + local_y - 1)
+				var point_relative = Vector2i(point.x + local_x - 1, point.y + local_y - 1)
 				var point_relative_index = calculate_point_index(point_relative)
 				if point_relative == point or is_outside_map_bounds(point_relative):
 					continue
@@ -128,8 +141,8 @@ func clear_previous_path_drawing():
 		return
 	var point_start = _point_path[0]
 	var point_end = _point_path[len(_point_path) - 1]
-	set_cell(point_start.x, point_start.y, -1)
-	set_cell(point_end.x, point_end.y, -1)
+	erase_cell(0, point_start)  # Updated for Godot 4
+	erase_cell(0, point_end)    # Updated for Godot 4
 
 
 func is_outside_map_bounds(point):
@@ -137,12 +150,12 @@ func is_outside_map_bounds(point):
 
 
 func get_astar_path(world_start, world_end):
-	self.path_start_position = world_to_map(world_start)
-	self.path_end_position = world_to_map(world_end)
+	self.path_start_position = local_to_map(world_start)
+	self.path_end_position = local_to_map(world_end)
 	_recalculate_path()
 	var path_world = []
 	for point in _point_path:
-		var point_world = map_to_world(Vector2(point.x, point.y)) + _half_cell_size
+		var point_world = map_to_local(point) + _half_cell_size
 		path_world.append(point_world)
 	return path_world
 
@@ -155,7 +168,7 @@ func _recalculate_path():
 	# end points' indices as input.
 	_point_path = astar_node.get_point_path(start_point_index, end_point_index)
 	# Redraw the lines and circles from the start to the end point.
-	update()
+	queue_redraw()  # update() is now queue_redraw() in Godot 4
 
 
 # Setters for the start and end path values.
@@ -165,8 +178,8 @@ func _set_path_start_position(value):
 	if is_outside_map_bounds(value):
 		return
 
-	set_cell(path_start_position.x, path_start_position.y, -1)
-	set_cell(value.x, value.y, 1)
+	erase_cell(0, path_start_position)     # Updated for Godot 4
+	set_cell(0, value, 0, Vector2i(1, 0))  # Updated for Godot 4
 	path_start_position = value
 	if path_end_position and path_end_position != path_start_position:
 		_recalculate_path()
@@ -178,8 +191,8 @@ func _set_path_end_position(value):
 	if is_outside_map_bounds(value):
 		return
 
-	set_cell(path_start_position.x, path_start_position.y, -1)
-	set_cell(value.x, value.y, 2)
+	erase_cell(0, path_start_position)     # Updated for Godot 4
+	set_cell(0, value, 0, Vector2i(2, 0))  # Updated for Godot 4
 	path_end_position = value
 	if path_start_position != value:
 		_recalculate_path()

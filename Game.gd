@@ -28,8 +28,8 @@ func _ready():
 	var pickUps = get_tree().get_nodes_in_group("fruit")
 	for i in pickUps:
 		i.visible = true
-		i.get_node("Area2D").set_collision_layer_bit(0,0)
-		i.get_node("Area2D").set_collision_mask_bit(0,0)
+		i.get_node("Area2D").set_collision_layer_value(0,0)
+		i.get_node("Area2D").set_collision_mask_value(0,0)
 	
 	
 	#save()
@@ -59,26 +59,30 @@ func spawnFruit():
 	var pickUps = get_tree().get_nodes_in_group("fruit")
 	for i in pickUps:
 		i.visible = true
-		i.get_node("Sprite").visible = true
-		i.get_node("Area2D").set_collision_layer_bit(0,1)
-		i.get_node("Area2D").set_collision_mask_bit(0,1)
+		i.get_node("Sprite2D").visible = true
+		i.get_node("Area2D").set_collision_layer_value(0,1)
+		i.get_node("Area2D").set_collision_mask_value(0,1)
 
+# FIXED: Updated save function for Godot 4
 func save():
-	var file = File.new()
-	file.open(FILE_NAME, File.WRITE)
-	file.store_string(to_json(player))
-	file.close()
-
-func loadf():
-	var file = File.new()
-	if file.file_exists(FILE_NAME):
-		file.open(FILE_NAME, File.READ)
-		var data = parse_json(file.get_as_text())
+	var file = FileAccess.open(FILE_NAME, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(player))
 		file.close()
-		if typeof(data) == TYPE_DICTIONARY:
-			player = data
-		else:
-			printerr("Corrupted data!")
+
+# FIXED: Updated load function for Godot 4
+func loadf():
+	if FileAccess.file_exists(FILE_NAME):
+		var file = FileAccess.open(FILE_NAME, FileAccess.READ)
+		if file:
+			var test_json_conv = JSON.new()
+			test_json_conv.parse(file.get_as_text())
+			var data = test_json_conv.get_data()
+			file.close()
+			if typeof(data) == TYPE_DICTIONARY:
+				player = data
+			else:
+				printerr("Corrupted data!")
 	else:
 		printerr("No saved data!")
 
@@ -102,8 +106,8 @@ func newStage():
 	var pickUps = get_tree().get_nodes_in_group("pickUp")
 	for i in pickUps:
 		i.visible = true
-		i.get_node("Area2D").set_collision_layer_bit(0,1)
-		i.get_node("Area2D").set_collision_mask_bit(0,1)
+		i.get_node("Area2D").set_collision_layer_value(0,1)
+		i.get_node("Area2D").set_collision_mask_value(0,1)
 	#get_node("GhostSpawn").position
 
 #called when stage won
@@ -313,7 +317,7 @@ func _on_Area2D_body_entered(body):
 
 
 func _on_ReplayButton_pressed():
-	get_tree().change_scene("res://Game.tscn")
+	get_tree().change_scene_to_file("res://Game.tscn")
 	pass # Replace with function body.
 
 #resume game when stage is setup

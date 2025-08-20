@@ -1,0 +1,6 @@
+res://default_env.tres
+res://Title.tscn
+res://astar.gd
+res://Player.gd
+res://Game.gd
+res://Ghost.gd

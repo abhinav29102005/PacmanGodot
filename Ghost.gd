@@ -1,12 +1,11 @@
-extends KinematicBody2D
+extends CharacterBody2D
 
-export (int) var speed = 50
+@export var speed: int = 50
 var slowSpeed = 25
 var rng = RandomNumberGenerator.new()
-
 var isMoving = 0
 var lastDir = "left"
-var velocity = Vector2()
+# REMOVED: var velocity = Vector2() - conflicts with built-in CharacterBody2D velocity
 var my_random_number = 3
 var isCaged = 0
 var forceMoving = 0
@@ -18,7 +17,6 @@ func _ready():
 	rng.randomize()
 	newDir()
 	
-
 func newDir():
 	my_random_number = rng.randi_range(1, 4)
 	match my_random_number:
@@ -32,9 +30,8 @@ func newDir():
 			lastDir = "right"
 	pass
 
-
 func get_direction():
-	#velocity = Vector2()
+	velocity = Vector2()  # Use built-in velocity property
 	if (lastDir == "right"):
 		isMoving = 1
 		lastDir = "right"
@@ -63,15 +60,17 @@ func moveUp():
 	forceMoving = 1
 	lastDir = "up"
 
+# Fixed function name - was *physics*process in original
 func _physics_process(delta):
-	if (!move_and_slide(velocity) && forceMoving == 0):
+	if (!velocity && forceMoving == 0):
 		#print("not moving")
 		newDir()
 	if(forceMoving):
 		velocity.y -= 1
-		velocity = move_and_slide(velocity)
+		move_and_slide()  # Removed set_velocity() - not needed in Godot 4
 	else:
 		get_direction()
+	
 	#make ghost focus player position, TODO wall check
 	if(chasing && !isCaged):
 		if(!MyGlobals.powerUpActive):
@@ -83,10 +82,11 @@ func _physics_process(delta):
 			velocity = position.direction_to(player.position) * -speed
 		else:
 			velocity = position.direction_to(player.position) * -slowSpeed
-	velocity = move_and_slide(velocity)
+	
+	move_and_slide()  # Single call, removed set_velocity()
 
-
-func _on_Area2D_body_entered(body):
+# Fixed signal function names - was *on*Area2D_body_entered in original
+func _on_area_2d_body_entered(body):
 	if body.is_in_group("Player") && MyGlobals.gameOver == 0:
 		print("player hit")
 		if(!MyGlobals.powerUpActive):
@@ -106,33 +106,30 @@ func _on_Area2D_body_entered(body):
 		#queue_free()
 	pass # Replace with function body.
 
-
-func _on_EscapeTimer_timeout():
+# Fixed function name - was *on*EscapeTimer_timeout in original
+func _on_escape_timer_timeout():
 	forceMoving = 0
 	pass # Replace with function body.
 
-func _on_chasearea1_body_entered(body):
+func _on_chasearea_1_body_entered(body):
 	if body.is_in_group("Player"):
 		print("player chase")
 		chasing = 1
 	pass # Replace with function body.
 
-
-func _on_chasearea1_body_exited(body):
+func _on_chasearea_1_body_exited(body):
 	if body.is_in_group("Player"):
 		print("player no chase")
 		chasing = 0
 	pass # Replace with function body.
 
-
-func _on_chasearea2_body_entered(body):
+func _on_chasearea_2_body_entered(body):
 	if body.is_in_group("Player"):
 		print("player chase")
 		chasing = 1
 	pass # Replace with function body.
 
-
-func _on_chasearea2_body_exited(body):
+func _on_chasearea_2_body_exited(body):
 	if body.is_in_group("Player"):
 		print("player no chase")
 		chasing = 0
